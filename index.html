@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>인쇄 크기 확인</title>
+<style>
+:root{--ink:#161616;--ink2:#6b6b68;--hair:#e3e3df;--wall:#fff;--acc:#e5484d}
+*{box-sizing:border-box}
+html,body{margin:0;background:#f4f4f1;color:var(--ink);font-family:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 60px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:760px){main{grid-template-columns:1fr}}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:var(--ink2);font-size:14px;margin:0 0 16px;line-height:1.5}
+.card{background:var(--wall);border:1px solid var(--hair);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 10px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button,.btn{font:inherit;font-size:15px;font-weight:700;padding:10px 14px;border-radius:999px;border:1.5px solid var(--ink);background:var(--wall);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.seg button[aria-pressed="true"],.btn.go{background:var(--ink);color:#fff}
+.btn{width:100%;margin-top:8px}
+.row{display:grid;grid-template-columns:96px 1fr 56px;align-items:center;gap:8px;margin:10px 0;font-size:15px}
+.row input[type=range]{width:100%}
+.row output{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.step{display:flex;gap:6px;justify-content:flex-end;margin-top:-4px}
+.step button{font:inherit;font-size:13px;padding:4px 10px;border-radius:8px;border:1px solid var(--hair);background:#f4f4f1;cursor:pointer}
+.prev{background:var(--wall);border:1px solid var(--hair);border-radius:14px;padding:16px;display:grid;place-items:center}
+#cv{width:min(100%,420px);height:auto;box-shadow:0 2px 12px rgba(0,0,0,.12)}
+ol{margin:0;padding-left:20px;font-size:14px;line-height:1.7}
+.vals{font-size:15px;line-height:1.8;font-variant-numeric:tabular-nums}
+.vals b{display:inline-block;min-width:110px}
+.note{font-size:13px;color:var(--ink2);line-height:1.5;margin:8px 0 0}
+#printArea{display:none}
+@media print{
+  @page{size:100mm 148mm;margin:0}
+  html,body{margin:0!important;padding:0!important;background:#fff;width:100%;height:auto}
+  main{display:none!important}
+  #printArea{display:block!important;width:100%;margin:0;padding:0}
+  #printArea img{display:block;width:100%;height:auto;margin:0;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<main>
+  <section>
+    <h1>인쇄 크기 확인</h1>
+    <p class="sub">포토부스 앱과 같은 크기(100×148mm, 1181×1748px)의 시험지를 인쇄 방법별로 뽑아 보고, 종이에 꽉 차고 가운데가 맞도록 값을 찾아요. 찾은 값은 포토부스 교사 설정 → 인쇄 맞춤에 넣으면 돼요.</p>
+    <p id="nojs" style="background:#fff3cd;border:1px solid #f5c542;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5">이 글이 보이면 지금 화면은 <b>파일 미리보기</b>라서 버튼이 움직이지 않아요. 사파리나 크롬으로 열어 주세요.</p>
+    <div class="prev"><canvas id="cv" width="1181" height="1748"></canvas></div>
+  </section>
+  <aside>
+    <div class="card"><h2>0. 기기</h2>
+      <div class="seg" id="device">
+        <button type="button" data-d="ipad">아이패드</button>
+        <button type="button" data-d="galaxy">갤럭시 탭</button>
+      </div>
+      <p class="note">자동으로 골라져요. 틀리면 눌러서 바꿔 주세요. 고른 기기 이름이 시험지에 찍혀요.</p></div>
+    <div class="card"><h2>1. 인쇄 방법</h2>
+      <div class="seg" id="method">
+        <button type="button" data-m="page">웹앱 인쇄</button>
+        <button type="button" data-m="photo">사진 앱 인쇄</button>
+      </div>
+      <p class="note" id="mNote"></p></div>
+    <div class="card"><h2>2. 시험지 종류</h2>
+      <div class="seg" id="kind">
+        <button type="button" data-k="ruler">눈금자</button>
+        <button type="button" data-k="strip">두 줄 띠</button>
+      </div></div>
+    <div class="card"><h2>3. 맞춤 값 <span style="font-weight:400;color:var(--ink2)">(방법마다 따로)</span></h2>
+      <div class="row"><span>크기</span><input type="range" id="sc" min="90" max="115" step="0.1"><output id="scO"></output></div>
+      <div class="step"><button data-t="sc" data-d="-0.5">−0.5</button><button data-t="sc" data-d="0.5">+0.5</button></div>
+      <div class="row"><span>좌우 이동</span><input type="range" id="dx" min="-8" max="8" step="0.25"><output id="dxO"></output></div>
+      <div class="step"><button data-t="dx" data-d="-0.25">← 0.25</button><button data-t="dx" data-d="0.25">0.25 →</button></div>
+      <div class="row"><span>위아래 이동</span><input type="range" id="dy" min="-8" max="8" step="0.25"><output id="dyO"></output></div>
+      <div class="step"><button data-t="dy" data-d="-0.25">↑ 0.25</button><button data-t="dy" data-d="0.25">0.25 ↓</button></div>
+      <button type="button" class="btn" id="reset">기본값으로 되돌리기</button>
+      <button type="button" class="btn go" id="go">인쇄하기</button>
+      <p class="note" id="goNote"></p></div>
+    <div class="card"><h2>읽는 법</h2>
+      <ol>
+        <li>시험지를 뽑아요. 종이 아래에 방법과 값이 찍혀서 여러 장을 비교할 수 있어요.</li>
+        <li><b>흰 여백이 남으면</b> 크기를 키우고, <b>잘려 나가면</b> 줄여요. 여백 1mm ≈ 2%예요.</li>
+        <li>종이를 정확히 반으로 접었을 때 <b>빨간 가운데 선</b>이 접힌 자리보다 왼쪽에 있으면 좌우 이동을 <b>+</b>(오른쪽)로, 오른쪽에 있으면 <b>−</b>로 옮겨요.</li>
+        <li>위아래도 같은 방법이에요(+는 아래).</li>
+      </ol></div>
+    <div class="card"><h2>앱에 넣을 값</h2><div class="vals" id="vals"></div>
+      <p class="note">이 값은 이 태블릿에 저장돼서 다음에 열어도 남아 있어요.</p></div>
+  </aside>
+</main>
+<div id="printArea"><img id="printImg" alt=""></div>
+<script>
+(()=>{
+const W=1181,H=1748,PX=W/100,$=id=>document.getElementById(id);
+/* 사진 앱 기본 95.9%: 셀피 테두리 없음 인쇄는 그림을 약 4.3% 키워 가장자리를 잘라 냄 */
+const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const AUTO_DEV=IOS?'ipad':(/Android/i.test(navigator.userAgent)?'galaxy':'ipad');
+let st={device:AUTO_DEV,method:'page',kind:'ruler',v:{page:{sc:100,dx:0,dy:0},photo:{sc:95.9,dx:0,dy:0}}};
+try{const o=JSON.parse(localStorage.getItem('booth-sizecheck')||'null');if(o&&o.v)st=Object.assign(st,o);}catch(e){}
+const save=()=>{try{localStorage.setItem('booth-sizecheck',JSON.stringify(st));}catch(e){}};
+const V=()=>st.v[st.method];
+const LABEL={page:'웹앱 인쇄',photo:'사진 앱 인쇄'},DEV={ipad:'아이패드',galaxy:'갤럭시 탭'};
+
+function base(){const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);
+  const F=(w,s)=>`${w} ${s}px "Apple SD Gothic Neo","Noto Sans KR",sans-serif`;x.textBaseline='middle';x.textAlign='center';
+  if(st.kind==='strip'){
+    // 포토부스 두 줄 띠와 같은 자리: 띠마다 양옆 2.5mm(30px)
+    for(const x0 of [0,W/2]){x.fillStyle='#1a1a1a';x.font=F(800,40);x.fillText('로고',x0+125,105);
+      for(let i=0;i<4;i++){const y=215+i*344;x.fillStyle=['#c9d7e8','#e8d2c9','#d1e8c9','#e2c9e8'][i];x.fillRect(x0+30,y,W/2-60,330);
+        x.fillStyle='#161616';x.font=F(800,60);x.fillText(String(i+1),x0+W/4,y+165);}
+      x.font=F(900,40);x.fillStyle='#161616';x.fillText('여백이 같아야 해요',x0+W/4,1675);}
+    x.strokeStyle='rgba(22,22,22,.35)';x.lineWidth=1.5;x.beginPath();x.moveTo(W/2,0);x.lineTo(W/2,H);x.stroke();
+  }else{
+    const cols=['#e5484d','#f5a524','#30a46c','#0091ff','#8e4ec6','#161616'];
+    for(let m=1;m<=6;m++){const d=m*PX-PX/2;x.strokeStyle=cols[m-1];x.lineWidth=3;x.strokeRect(d,d,W-2*d,H-2*d);}
+    x.textAlign='left';x.font=F(700,30);const names=['빨강','주황','초록','파랑','보라','검정'];
+    for(let m=1;m<=6;m++){const yy=640+m*58;x.fillStyle=cols[m-1];x.fillRect(300,yy-14,90,28);x.fillStyle='#161616';x.fillText(`${names[m-1]} = 가장자리에서 ${m-.5}mm`,410,yy);}
+    x.textAlign='center';x.fillStyle='#161616';x.font=F(800,40);x.fillText('인쇄 크기 시험지',W/2,470);
+    x.font=F(500,28);['가장 바깥에 보이는 선 색으로','어느 쪽이 얼마나 잘렸는지 알 수 있어요'].forEach((t,i)=>x.fillText(t,W/2,540+i*42));}
+  // 눈금자(위·아래: 가로 mm, 왼쪽·오른쪽: 세로 mm) — 두 종류 모두
+  x.strokeStyle='#e5484d';x.fillStyle='#e5484d';x.lineWidth=2;x.font=F(700,22);
+  for(let mm=0;mm<=100;mm++){const xx=Math.min(W-1,Math.round(mm*PX));const L=mm%10?(mm%5?14:24):38;
+    x.beginPath();x.moveTo(xx,st.kind==='strip'?0:80);x.lineTo(xx,(st.kind==='strip'?0:80)+L);x.stroke();
+    x.beginPath();x.moveTo(xx,H-(st.kind==='strip'?0:80));x.lineTo(xx,H-(st.kind==='strip'?0:80)-L);x.stroke();
+    if(mm%10===0&&mm>0&&mm<100){x.fillText(mm,xx+(mm===50?0:0),(st.kind==='strip'?0:80)+56);x.fillText(mm,xx,H-(st.kind==='strip'?0:80)-56);}}
+  // 가운데 세로 빨간 선(50mm)
+  x.lineWidth=3;x.beginPath();x.moveTo(W/2,st.kind==='strip'?70:150);x.lineTo(W/2,st.kind==='strip'?190:400);x.stroke();
+  x.beginPath();x.moveTo(W/2,H-(st.kind==='strip'?70:150));x.lineTo(W/2,H-(st.kind==='strip'?190:400));x.stroke();
+  if(st.kind==='ruler'){x.beginPath();x.moveTo(W/2,1100);x.lineTo(W/2,1340);x.stroke();}
+  return c;}
+function withCalib(src,label){const v=V(),s=v.sc/100;const o=document.createElement('canvas');o.width=W;o.height=H;const x=o.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);const w=W*s,h=H*s;x.drawImage(src,(W-w)/2+v.dx*PX,(H-h)/2+v.dy*PX,w,h);
+  if(label){x.fillStyle='#161616';x.font='600 24px "Apple SD Gothic Neo","Noto Sans KR",sans-serif';x.textAlign='center';x.textBaseline='middle';
+    const d=new Date(),t=`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    x.save();x.font=`800 ${st.kind==='strip'?30:46}px "Apple SD Gothic Neo","Noto Sans KR",sans-serif`;if(st.kind==='strip'){x.fillStyle='#fff';x.fillRect(W/2-200,1592,400,40);x.fillStyle='#161616';}x.fillText(`[ ${DEV[st.device]} · ${LABEL[st.method]} ]`,W/2,st.kind==='strip'?1612:H-280);x.restore();
+    x.fillText(`${DEV[st.device]} · ${LABEL[st.method]} · 크기 ${v.sc}% · 좌우 ${v.dx}mm · 위아래 ${v.dy}mm · ${t}`,W/2,st.kind==='strip'?190:H-210);}
+  return o;}
+function draw(){const c=withCalib(base(),true);$('cv').getContext('2d').drawImage(c,0,0);try{$('printImg').src=c.toDataURL('image/jpeg',.95);}catch(e){}return c;}
+
+function ui(){document.querySelectorAll('#device button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===st.device));
+  document.querySelectorAll('#method button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===st.method));
+  document.querySelectorAll('#kind button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===st.kind));
+  const v=V();$('sc').value=v.sc;$('dx').value=v.dx;$('dy').value=v.dy;$('scO').textContent=v.sc+'%';$('dxO').textContent=v.dx+'mm';$('dyO').textContent=v.dy+'mm';
+  $('mNote').textContent=st.method==='page'
+    ?'포토부스 웹앱의 「인쇄하기」(브라우저 인쇄 창)와 같은 방식이에요.'
+    :(IOS?'공유 창이 뜨면 「이미지 저장」으로 사진 앱에 저장한 뒤 사진 앱에서 인쇄하거나, 바로 「프린트」를 눌러요. 둘은 같은 크기로 나와요.':'사진 파일을 내려받아요. 갤러리(사진 앱)에서 열어 인쇄해요.');
+  $('goNote').textContent=st.method==='page'?'인쇄 창: 프린터 CP1500 · 용지 엽서(100×148mm) · 테두리 없음':'사진 앱 인쇄 창: 프린터 CP1500 · 용지 엽서(100×148mm) · 테두리 없음';
+  const p=st.v.page,q=st.v.photo;$('vals').innerHTML=`<div style="font-weight:800">${DEV[st.device]}</div><div><b>웹앱 인쇄</b>크기 ${p.sc}% · 좌우 ${p.dx} · 위아래 ${p.dy}</div><div><b>사진 앱 인쇄</b>크기 ${q.sc}% · 좌우 ${q.dx} · 위아래 ${q.dy}</div>`;
+  draw();save();}
+document.querySelectorAll('#device button').forEach(b=>b.onclick=()=>{st.device=b.dataset.d;ui();});
+document.querySelectorAll('#method button').forEach(b=>b.onclick=()=>{st.method=b.dataset.m;ui();});
+document.querySelectorAll('#kind button').forEach(b=>b.onclick=()=>{st.kind=b.dataset.k;ui();});
+['sc','dx','dy'].forEach(k=>$(k).oninput=e=>{V()[k]=+e.target.value;ui();});
+document.querySelectorAll('.step button').forEach(b=>b.onclick=()=>{const k=b.dataset.t,el=$(k);V()[k]=Math.round(Math.min(+el.max,Math.max(+el.min,V()[k]+ +b.dataset.d))*100)/100;ui();});
+$('reset').onclick=()=>{st.v[st.method]={sc:st.method==='photo'?95.9:100,dx:0,dy:0};ui();};
+$('go').onclick=async()=>{
+  if(st.method==='page'){try{window.print();}catch(e){alert('이 화면에서는 인쇄를 열 수 없어요. 사파리(또는 크롬)에서 열어 주세요.');}return;}
+  const c=draw();
+  const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.95));const name=`size-check-${Date.now()}.jpg`;const f=new File([b],name,{type:'image/jpeg'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});}catch(e){}return;}
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);};
+ui();
+try{document.getElementById('nojs').remove();}catch(e){}
+})();
+</script>
+</body>
+</html>
