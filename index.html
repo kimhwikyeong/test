@@ -42,7 +42,7 @@ ol{margin:0;padding-left:20px;font-size:14px;line-height:1.7}
 <body>
 <main>
   <section>
-    <h1>인쇄 크기 확인</h1>
+    <h1>인쇄 크기 확인 <small style="font-weight:500;font-size:14px;color:var(--ink2)">시험지 v2026.11.09-c</small></h1>
     <p class="sub">포토부스 앱과 같은 크기(100×148mm, 1181×1748px)의 시험지를 인쇄 방법별로 뽑아 보고, 종이에 꽉 차고 가운데가 맞도록 값을 찾아요. 찾은 값은 포토부스 교사 설정 → 인쇄 맞춤에 넣으면 돼요.</p>
     <p id="nojs" style="background:#fff3cd;border:1px solid #f5c542;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.5">이 글이 보이면 지금 화면은 <b>파일 미리보기</b>라서 버튼이 움직이지 않아요. 사파리나 크롬으로 열어 주세요.</p>
     <div class="prev"><canvas id="cv" width="1181" height="1748"></canvas></div>
@@ -89,12 +89,14 @@ ol{margin:0;padding-left:20px;font-size:14px;line-height:1.7}
 <div id="printArea"><img id="printImg" alt=""></div>
 <script>
 (()=>{
+const VER='v2026.11.09-c';
 const W=1181,H=1748,PX=W/100,$=id=>document.getElementById(id);
 /* 사진 앱 기본 95.9%: 셀피 테두리 없음 인쇄는 그림을 약 4.3% 키워 가장자리를 잘라 냄 */
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const AUTO_DEV=IOS?'ipad':(/Android/i.test(navigator.userAgent)?'galaxy':'ipad');
-let st={device:AUTO_DEV,method:'page',kind:'ruler',v:{page:{sc:92.5,dx:-0.5,dy:-0.75},photo:{sc:92.5,dx:0,dy:-0.5}}};
-try{const o=JSON.parse(localStorage.getItem('booth-sizecheck')||'null');if(o&&o.v)st=Object.assign(st,o);}catch(e){}
+let st={device:AUTO_DEV,method:'page',kind:'ruler',v:{page:{sc:92.5,dx:-0.5,dy:-0.75},photo:{sc:94,dx:0,dy:-0.5}}};
+try{const o=JSON.parse(localStorage.getItem('booth-sizecheck')||'null');if(o&&o.v&&o.ver===VER)st=Object.assign(st,o);else if(o&&o.device)st.device=o.device;}catch(e){}
+st.ver=VER;
 const save=()=>{try{localStorage.setItem('booth-sizecheck',JSON.stringify(st));}catch(e){}};
 const V=()=>st.v[st.method];
 const LABEL={page:'웹앱 인쇄',photo:'사진 앱 인쇄'},DEV={ipad:'아이패드',galaxy:'갤럭시 탭'};
@@ -131,7 +133,7 @@ function withCalib(src,label){const v=V(),s=v.sc/100;const o=document.createElem
   if(label){x.fillStyle='#161616';x.font='600 24px "Apple SD Gothic Neo","Noto Sans KR",sans-serif';x.textAlign='center';x.textBaseline='middle';
     const d=new Date(),t=`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
     x.save();x.font=`800 ${st.kind==='strip'?30:46}px "Apple SD Gothic Neo","Noto Sans KR",sans-serif`;if(st.kind==='strip'){x.fillStyle='#fff';x.fillRect(W/2-200,1592,400,40);x.fillStyle='#161616';}x.fillText(`[ ${DEV[st.device]} · ${LABEL[st.method]} ]`,W/2,st.kind==='strip'?1612:H-280);x.restore();
-    x.fillText(`${DEV[st.device]} · ${LABEL[st.method]} · 크기 ${v.sc}% · 좌우 ${v.dx}mm · 위아래 ${v.dy}mm · ${t}`,W/2,st.kind==='strip'?190:H-210);}
+    x.fillText(`${VER} · ${DEV[st.device]} · ${LABEL[st.method]} · 크기 ${v.sc}% · 좌우 ${v.dx}mm · 위아래 ${v.dy}mm · ${t}`,W/2,st.kind==='strip'?190:H-210);}
   return o;}
 function draw(){const c=withCalib(base(),true);$('cv').getContext('2d').drawImage(c,0,0);try{$('printImg').src=c.toDataURL('image/jpeg',.95);}catch(e){}return c;}
 
@@ -150,7 +152,7 @@ document.querySelectorAll('#method button').forEach(b=>b.onclick=()=>{st.method=
 document.querySelectorAll('#kind button').forEach(b=>b.onclick=()=>{st.kind=b.dataset.k;ui();});
 ['sc','dx','dy'].forEach(k=>$(k).oninput=e=>{V()[k]=+e.target.value;ui();});
 document.querySelectorAll('.step button').forEach(b=>b.onclick=()=>{const k=b.dataset.t,el=$(k);V()[k]=Math.round(Math.min(+el.max,Math.max(+el.min,V()[k]+ +b.dataset.d))*100)/100;ui();});
-$('reset').onclick=()=>{st.v[st.method]=(st.method==='photo'?{sc:92.5,dx:0,dy:-0.5}:{sc:92.5,dx:-0.5,dy:-0.75});ui();};
+$('reset').onclick=()=>{st.v[st.method]=(st.method==='photo'?{sc:94,dx:0,dy:-0.5}:{sc:92.5,dx:-0.5,dy:-0.75});ui();};
 $('go').onclick=async()=>{
   if(st.method==='page'){try{window.print();}catch(e){alert('이 화면에서는 인쇄를 열 수 없어요. 사파리(또는 크롬)에서 열어 주세요.');}return;}
   const c=draw();
