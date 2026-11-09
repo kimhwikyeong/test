@@ -93,7 +93,7 @@ const W=1181,H=1748,PX=W/100,$=id=>document.getElementById(id);
 /* 사진 앱 기본 95.9%: 셀피 테두리 없음 인쇄는 그림을 약 4.3% 키워 가장자리를 잘라 냄 */
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const AUTO_DEV=IOS?'ipad':(/Android/i.test(navigator.userAgent)?'galaxy':'ipad');
-let st={device:AUTO_DEV,method:'page',kind:'ruler',v:{page:{sc:100,dx:0,dy:0},photo:{sc:92.5,dx:0,dy:-0.5}}};
+let st={device:AUTO_DEV,method:'page',kind:'ruler',v:{page:{sc:92.5,dx:-0.5,dy:-0.75},photo:{sc:92.5,dx:0,dy:-0.5}}};
 try{const o=JSON.parse(localStorage.getItem('booth-sizecheck')||'null');if(o&&o.v)st=Object.assign(st,o);}catch(e){}
 const save=()=>{try{localStorage.setItem('booth-sizecheck',JSON.stringify(st));}catch(e){}};
 const V=()=>st.v[st.method];
@@ -150,7 +150,7 @@ document.querySelectorAll('#method button').forEach(b=>b.onclick=()=>{st.method=
 document.querySelectorAll('#kind button').forEach(b=>b.onclick=()=>{st.kind=b.dataset.k;ui();});
 ['sc','dx','dy'].forEach(k=>$(k).oninput=e=>{V()[k]=+e.target.value;ui();});
 document.querySelectorAll('.step button').forEach(b=>b.onclick=()=>{const k=b.dataset.t,el=$(k);V()[k]=Math.round(Math.min(+el.max,Math.max(+el.min,V()[k]+ +b.dataset.d))*100)/100;ui();});
-$('reset').onclick=()=>{st.v[st.method]={sc:st.method==='photo'?92.5:100,dx:0,dy:st.method==='photo'?-0.5:0};ui();};
+$('reset').onclick=()=>{st.v[st.method]=(st.method==='photo'?{sc:92.5,dx:0,dy:-0.5}:{sc:92.5,dx:-0.5,dy:-0.75});ui();};
 $('go').onclick=async()=>{
   if(st.method==='page'){try{window.print();}catch(e){alert('이 화면에서는 인쇄를 열 수 없어요. 사파리(또는 크롬)에서 열어 주세요.');}return;}
   const c=draw();
